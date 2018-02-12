@@ -174,7 +174,7 @@ static void xf_Bitmap_Free(rdpContext* context, rdpBitmap* bitmap)
 		XFreePixmap(xfc->display, xbitmap->pixmap);
 
 	if (xbitmap->image)
-		XDestroyImage(xbitmap->image);
+		XFree(xbitmap->image);
 
 	xf_unlock_x11(xfc, FALSE);
 }
@@ -397,7 +397,7 @@ static BOOL xf_Glyph_New(rdpContext* context, const rdpGlyph* glyph)
 	XInitImage(image);
 	XPutImage(xfc->display, xf_glyph->pixmap, xfc->gc_mono, image, 0, 0, 0, 0,
 	          glyph->cx, glyph->cy);
-	XDestroyImage(image);
+	XFree(image);
 	xf_unlock_x11(xfc, FALSE);
 	return TRUE;
 }

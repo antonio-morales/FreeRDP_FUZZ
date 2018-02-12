@@ -310,7 +310,7 @@ static UINT xf_CreateSurface(RdpgfxClientContext* context,
 
 	return CHANNEL_RC_OK;
 error_set_surface_data:
-	XDestroyImage(surface->image);
+	XFree(surface->image);
 error_surface_image:
 	_aligned_free(surface->stage);
 out_free_gdidata:
@@ -338,7 +338,7 @@ static UINT xf_DeleteSurface(RdpgfxClientContext* context,
 #ifdef WITH_GFX_H264
 		h264_context_free(surface->gdi.h264);
 #endif
-		XDestroyImage(surface->image);
+		XFree(surface->image);
 		_aligned_free(surface->gdi.data);
 		_aligned_free(surface->stage);
 		region16_uninit(&surface->gdi.invalidRegion);
