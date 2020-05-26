@@ -622,7 +622,7 @@ static void xf_cliprdr_process_requested_data(xfClipboard* clipboard, BOOL hasDa
 		UINT32 file_count = DstSize / sizeof(FILEDESCRIPTOR);
 		pDstData = NULL;
 		DstSize = 0;
-		error = cliprdr_serialize_file_list(file_array, file_count, &pDstData, &DstSize);
+		//error = cliprdr_serialize_file_list(file_array, file_count, &pDstData, &DstSize);
 
 		if (error)
 			WLog_ERR(TAG, "failed to serialize CLIPRDR_FILELIST: 0x%08X", error);

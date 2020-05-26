@@ -81,6 +81,8 @@
 
 #include <freerdp/log.h>
 
+#include "../../../../fuzzing_aux.h"
+
 #include <winpr/stream.h>
 
 #include "tcp.h"
@@ -707,12 +709,15 @@ static char* freerdp_tcp_get_ip_address(int sockfd, BOOL* pIPv6)
 	struct sockaddr_storage saddr = { 0 };
 	socklen_t length = sizeof(struct sockaddr_storage);
 
+	/*
 	if (getsockname(sockfd, (struct sockaddr*)&saddr, &length) != 0)
 	{
 		return NULL;
 	}
+	*/
 
-	return freerdp_tcp_address_to_string(&saddr, pIPv6);
+	//return freerdp_tcp_address_to_string(&saddr, pIPv6);
+	return "127.0.0.1";
 }
 
 char* freerdp_tcp_get_peer_address(SOCKET sockfd)
@@ -854,7 +859,8 @@ static BOOL freerdp_tcp_connect_timeout(rdpContext* context, int sockfd, struct 
 		goto fail;
 	}
 
-	status = recv(sockfd, NULL, 0, 0);
+	//status = recv(sockfd, NULL, 0, 0);
+	status = read(sockfd, NULL, 0);
 
 	if (status == SOCKET_ERROR)
 	{
@@ -1062,6 +1068,8 @@ static BOOL freerdp_tcp_set_keep_alive_mode(const rdpSettings* settings, int soc
 	return TRUE;
 }
 
+int fuzzingFD;
+
 int freerdp_tcp_connect(rdpContext* context, rdpSettings* settings, const char* hostname, int port,
                         int timeout)
 {
@@ -1146,7 +1154,8 @@ int freerdp_tcp_connect(rdpContext* context, rdpSettings* settings, const char* 
 					addr = result;
 			}
 
-			sockfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+			//sockfd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+			fuzzingFD = sockfd = strtol(getenv("fd_inputFile"), NULL, 10);
 
 			if (sockfd < 0)
 			{
@@ -1179,7 +1188,7 @@ int freerdp_tcp_connect(rdpContext* context, rdpSettings* settings, const char* 
 		}
 	}
 
-	free(settings->ClientAddress);
+	//free(settings->ClientAddress);
 	settings->ClientAddress = freerdp_tcp_get_ip_address(sockfd, &settings->IPv6Enabled);
 
 	if (!settings->ClientAddress)

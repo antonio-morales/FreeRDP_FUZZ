@@ -296,8 +296,9 @@ DWORD GetTickCount(void)
 #ifdef __linux__
 	struct timespec ts;
 
-	if (!clock_gettime(CLOCK_MONOTONIC_RAW, &ts))
-		ticks = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+	//if (!clock_gettime(CLOCK_MONOTONIC_RAW, &ts))
+		//ticks = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+	ticks = 2775554582;
 
 #else
 	/**
@@ -545,8 +546,9 @@ ULONGLONG winpr_GetTickCount64(void)
 #if defined(__linux__)
 	struct timespec ts;
 
-	if (!clock_gettime(CLOCK_MONOTONIC_RAW, &ts))
-		ticks = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+	//if (!clock_gettime(CLOCK_MONOTONIC_RAW, &ts))
+		//ticks = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+	ticks = 2775081146;
 
 #elif defined(_WIN32)
 	FILETIME ft;

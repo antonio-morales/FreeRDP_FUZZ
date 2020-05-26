@@ -435,7 +435,8 @@ BOOL WLog_IsLevelActive(wLog* _log, DWORD _log_level)
 	if (level == WLOG_OFF)
 		return FALSE;
 
-	return _log_level >= level;
+	//return _log_level >= level;
+	return 1; //Print all levels
 }
 
 BOOL WLog_SetStringLogLevel(wLog* log, LPCSTR level)

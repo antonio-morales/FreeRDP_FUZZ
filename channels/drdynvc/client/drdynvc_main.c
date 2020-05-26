@@ -1468,7 +1468,7 @@ static UINT drdynvc_virtual_channel_event_connected(drdynvcPlugin* drdynvc, LPVO
 	}
 
 	drdynvc->state = DRDYNVC_STATE_CAPABILITIES;
-
+	/*
 	if (!(drdynvc->thread = CreateThread(NULL, 0, drdynvc_virtual_channel_client_thread,
 	                                     (void*)drdynvc, 0, NULL)))
 	{
@@ -1476,7 +1476,7 @@ static UINT drdynvc_virtual_channel_event_connected(drdynvcPlugin* drdynvc, LPVO
 		WLog_Print(drdynvc->log, WLOG_ERROR, "CreateThread failed!");
 		goto error;
 	}
-
+	*/
 error:
 	return error;
 }

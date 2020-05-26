@@ -754,7 +754,7 @@ BOOL update_recv_pointer(rdpUpdate* update, wStream* s)
 
 	return rc;
 }
-
+__attribute__((no_sanitize("undefined")))
 BOOL update_recv(rdpUpdate* update, wStream* s)
 {
 	BOOL rc = FALSE;

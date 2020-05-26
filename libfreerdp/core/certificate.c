@@ -328,6 +328,9 @@ static rdpX509CertChain* certificate_new_x509_certificate_chain(UINT32 count)
 	if (!x509_cert_chain)
 		return NULL;
 
+	if (count > 0xFFFF)
+		return NULL;
+
 	x509_cert_chain->count = count;
 	x509_cert_chain->array = (rdpCertBlob*)calloc(count, sizeof(rdpCertBlob));
 

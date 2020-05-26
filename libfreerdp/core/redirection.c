@@ -463,7 +463,9 @@ static BOOL rdp_recv_server_redirection_pdu(rdpRdp* rdp, wStream* s)
 		Stream_Read_UINT32(s, targetNetAddressesLength);
 		Stream_Read_UINT32(s, redirection->TargetNetAddressesCount);
 		count = redirection->TargetNetAddressesCount;
-		redirection->TargetNetAddresses = (char**)calloc(count, sizeof(char*));
+		//ADDED BY ME
+		if (count < 0xFFFF)
+			redirection->TargetNetAddresses = (char**)calloc(count, sizeof(char*));
 
 		if (!redirection->TargetNetAddresses)
 			return FALSE;

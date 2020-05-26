@@ -362,7 +362,7 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 			return FALSE;
 	}
 
-	for (timeout = 0; timeout < settings->TcpAckTimeout; timeout += 100)
+	for (timeout = 0; timeout < settings->TcpAckTimeout; timeout += 3000)
 	{
 		if (rdp_check_fds(rdp) < 0)
 		{
@@ -373,7 +373,7 @@ BOOL rdp_client_connect(rdpRdp* rdp)
 		if (rdp->state == CONNECTION_STATE_ACTIVE)
 			return TRUE;
 
-		Sleep(100);
+		//Sleep(100);
 	}
 
 	WLog_ERR(TAG, "Timeout waiting for activation");

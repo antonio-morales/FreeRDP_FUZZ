@@ -1517,6 +1517,7 @@ int rdp_recv_callback(rdpTransport* transport, wStream* s, void* extra)
 			{
 				transport_set_nla_mode(rdp->transport, FALSE);
 
+				//rdp->settings->VmConnectMode = TRUE;
 				if (rdp->settings->VmConnectMode)
 				{
 					if (!nego_set_state(rdp->nego, NEGO_STATE_NLA))
@@ -1920,7 +1921,7 @@ void rdp_reset(rdpRdp* rdp)
 
 	if (settings->ClientAddress)
 	{
-		free(settings->ClientAddress);
+		//free(settings->ClientAddress);
 		settings->ClientAddress = NULL;
 	}
 

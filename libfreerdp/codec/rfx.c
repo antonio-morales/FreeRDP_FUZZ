@@ -272,7 +272,8 @@ RFX_CONTEXT* rfx_context_new(BOOL encoder)
 		priv->UseThreads = isVistaOrLater;
 	}
 #else
-	priv->UseThreads = TRUE;
+	//priv->UseThreads = TRUE;
+	priv->UseThreads = FALSE;
 #endif
 	GetNativeSystemInfo(&sysinfo);
 	priv->MinThreadCount = sysinfo.dwNumberOfProcessors;

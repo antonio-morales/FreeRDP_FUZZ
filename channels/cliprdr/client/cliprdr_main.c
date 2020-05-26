@@ -896,6 +896,10 @@ static DWORD WINAPI cliprdr_virtual_channel_client_thread(LPVOID arg)
 
 	while (1)
 	{
+		//MYFIX
+		if(arg)
+			return 1;
+
 		if (!MessageQueue_Wait(cliprdr->queue))
 		{
 			WLog_ERR(TAG, "MessageQueue_Wait failed!");
@@ -974,8 +978,11 @@ static UINT cliprdr_virtual_channel_event_connected(cliprdrPlugin* cliprdr, LPVO
 		return ERROR_NOT_ENOUGH_MEMORY;
 	}
 
+	/* MYFIX
 	if (!(cliprdr->thread = CreateThread(NULL, 0, cliprdr_virtual_channel_client_thread,
 	                                     (void*)cliprdr, 0, NULL)))
+		*/
+	if(!cliprdr_virtual_channel_client_thread((void*)cliprdr))
 	{
 		WLog_ERR(TAG, "CreateThread failed!");
 		MessageQueue_Free(cliprdr->queue);

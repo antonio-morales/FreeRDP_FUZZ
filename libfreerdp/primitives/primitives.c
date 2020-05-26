@@ -205,7 +205,8 @@ static BOOL primitives_autodetect_best(primitives_t* prims)
 {
 	size_t x;
 	BOOL ret = FALSE;
-	UINT64 benchDuration = 150; /* 150 ms */
+	//MYFIX
+	UINT64 benchDuration = 0; /* 0 ms fixed by me*/
 	struct prim_benchmark
 	{
 		const char* name;

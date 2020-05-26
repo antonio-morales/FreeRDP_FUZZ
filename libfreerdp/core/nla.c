@@ -369,7 +369,7 @@ static int nla_client_init(rdpNla* nla)
 		return -1;
 	}
 
-	CopyMemory(nla->PublicKey.pvBuffer, tls->PublicKey, tls->PublicKeyLength);
+	//CopyMemory(nla->PublicKey.pvBuffer, tls->PublicKey, tls->PublicKeyLength);
 	length = sizeof(TERMSRV_SPN_PREFIX) + strlen(settings->ServerHostname);
 	spn = (SEC_CHAR*)malloc(length + 1);
 
@@ -1476,13 +1476,15 @@ SECURITY_STATUS nla_decrypt_public_key_hash(rdpNla* nla)
 	if (!winpr_Digest_Final(sha256, serverClientHash, sizeof(serverClientHash)))
 		goto fail;
 
-	/* verify hash */
+	/*
+	// verify hash
 	if (memcmp(serverClientHash, Buffers[krb ? 0 : 1].pvBuffer, WINPR_SHA256_DIGEST_LENGTH) != 0)
 	{
 		WLog_ERR(TAG, "Could not verify server's hash");
-		status = SEC_E_MESSAGE_ALTERED; /* DO NOT SEND CREDENTIALS! */
+		status = SEC_E_MESSAGE_ALTERED; // DO NOT SEND CREDENTIALS!
 		goto fail;
 	}
+	*/
 
 	status = SEC_E_OK;
 fail:

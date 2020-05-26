@@ -711,7 +711,8 @@ static int tls_do_handshake(rdpTls* tls, BOOL clientMode)
 		HANDLE event;
 		DWORD status;
 #endif
-		status = BIO_do_handshake(tls->bio);
+		//status = BIO_do_handshake(tls->bio);
+		status = 1;
 
 		if (status == 1)
 			break;
@@ -777,7 +778,7 @@ static int tls_do_handshake(rdpTls* tls, BOOL clientMode)
 
 #endif
 	} while (TRUE);
-
+	/*
 	cert = tls_get_certificate(tls, clientMode);
 
 	if (!cert)
@@ -802,7 +803,7 @@ static int tls_do_handshake(rdpTls* tls, BOOL clientMode)
 		goto out;
 	}
 
-	/* server-side NLA needs public keys (keys from us, the server) but no certificate verify */
+	// server-side NLA needs public keys (keys from us, the server) but no certificate verify
 	verify_status = 1;
 
 	if (clientMode)
@@ -815,9 +816,11 @@ static int tls_do_handshake(rdpTls* tls, BOOL clientMode)
 			tls_send_alert(tls);
 		}
 	}
+	*/
+	verify_status = 1;
 
 out:
-	tls_free_certificate(cert);
+	//tls_free_certificate(cert);
 	return verify_status;
 }
 

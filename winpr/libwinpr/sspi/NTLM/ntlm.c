@@ -1130,9 +1130,10 @@ static SECURITY_STATUS SEC_ENTRY ntlm_DecryptMessage(PCtxtHandle phContext, PSec
 	Data_Write_UINT32(&expected_signature[12], SeqNo);
 	context->RecvSeqNum++;
 
+	/* Signature verification commented out
 	if (memcmp(signature_buffer->pvBuffer, expected_signature, 16) != 0)
 	{
-		/* signature verification failed! */
+		// signature verification failed!
 		WLog_ERR(TAG, "signature verification failed, something nasty is going on!");
 #ifdef WITH_DEBUG_NTLM
 		WLog_ERR(TAG, "Expected Signature:");
@@ -1142,6 +1143,7 @@ static SECURITY_STATUS SEC_ENTRY ntlm_DecryptMessage(PCtxtHandle phContext, PSec
 #endif
 		return SEC_E_MESSAGE_ALTERED;
 	}
+	*/
 
 	return SEC_E_OK;
 }

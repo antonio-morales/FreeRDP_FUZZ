@@ -754,7 +754,9 @@ static BOOL license_decrypt_and_check_MAC(rdpLicense* license, const BYTE* input
 
 	return license_rc4_with_licenseKey(license, input, len, target) &&
 	       security_mac_data(license->MacSaltKey, target->data, len, macData) &&
-	       (memcmp(packetMac, macData, sizeof(macData)) == 0);
+		   //MYFIX
+		   ((memcmp(packetMac, macData, sizeof(macData)) == 0)
+		   || (memcmp(packetMac, macData, sizeof(macData)) != 0));
 }
 
 /**
@@ -1202,7 +1204,10 @@ static BOOL license_read_encrypted_blob(const rdpLicense* license, wStream* s, L
 
 	encryptedData = Stream_Pointer(s);
 	Stream_Seek(s, wBlobLen);
-	return license_rc4_with_licenseKey(license, encryptedData, wBlobLen, target);
+	//MYFIX Nosotros le quitamos el RC4 a los inputs
+	int r = license_rc4_with_licenseKey(license, encryptedData, wBlobLen, target);
+	memcpy(target->data, encryptedData, wBlobLen); //Added by me
+	return r;
 }
 
 /**
@@ -1242,7 +1247,7 @@ BOOL license_read_new_or_upgrade_license_packet(rdpLicense* license, wStream* s)
 	if (memcmp(computedMac, Stream_Pointer(s), sizeof(computedMac)) != 0)
 	{
 		WLog_ERR(TAG, "new or upgrade license MAC mismatch");
-		goto out_free_blob;
+		//MYFIX goto out_free_blob;
 	}
 
 	if (!Stream_SafeSeek(s, 16))

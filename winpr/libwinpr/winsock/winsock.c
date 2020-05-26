@@ -1035,7 +1035,8 @@ int _connect(SOCKET s, const struct sockaddr* name, int namelen)
 {
 	int status;
 	int fd = (int)s;
-	status = connect(fd, name, (socklen_t)namelen);
+	//status = connect(fd, name, (socklen_t)namelen);
+	status = 0;
 
 	if (status < 0)
 		return SOCKET_ERROR;

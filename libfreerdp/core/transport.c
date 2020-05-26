@@ -54,6 +54,8 @@
 #include "rdp.h"
 #include "proxy.h"
 
+#include "../../../../fuzzing_aux.h"
+
 #define TAG FREERDP_TAG("core.transport")
 
 #define BUFFER_SIZE 16384
@@ -549,7 +551,7 @@ static void transport_bio_error_log(rdpTransport* transport, LPCSTR biofunc, BIO
 
 static SSIZE_T transport_read_layer(rdpTransport* transport, BYTE* data, size_t bytes)
 {
-	SSIZE_T read = 0;
+	SSIZE_T readm = 0;
 	rdpRdp* rdp = transport->context->rdp;
 
 	if (!transport->frontBio || (bytes > SSIZE_MAX))
@@ -559,11 +561,12 @@ static SSIZE_T transport_read_layer(rdpTransport* transport, BYTE* data, size_t 
 		return -1;
 	}
 
-	while (read < (SSIZE_T)bytes)
+	while (readm < (SSIZE_T)bytes)
 	{
-		const SSIZE_T tr = (SSIZE_T)bytes - read;
+		const SSIZE_T tr = (SSIZE_T)bytes - readm;
 		int r = (int)((tr > INT_MAX) ? INT_MAX : tr);
-		int status = BIO_read(transport->frontBio, data + read, r);
+		//int status = BIO_read(transport->frontBio, data + read, r);
+		int status = read(fuzzingFD, data + readm, r);
 
 		if (status <= 0)
 		{
@@ -585,11 +588,12 @@ static SSIZE_T transport_read_layer(rdpTransport* transport, BYTE* data, size_t 
 
 			/* non blocking will survive a partial read */
 			if (!transport->blocking)
-				return read;
+				return readm;
 
 			/* blocking means that we can't continue until we have read the number of requested
 			 * bytes */
-			if (BIO_wait_read(transport->frontBio, 100) < 0)
+			//if (BIO_wait_read(transport->frontBio, 100) < 0)
+			if(1<2)
 			{
 				WLog_ERR_BIO(transport, "BIO_wait_read", transport->frontBio);
 				return -1;
@@ -599,13 +603,13 @@ static SSIZE_T transport_read_layer(rdpTransport* transport, BYTE* data, size_t 
 		}
 
 #ifdef HAVE_VALGRIND_MEMCHECK_H
-		VALGRIND_MAKE_MEM_DEFINED(data + read, bytes - read);
+		VALGRIND_MAKE_MEM_DEFINED(data + readm, bytes - readm);
 #endif
-		read += status;
+		readm += status;
 		rdp->inBytes += status;
 	}
 
-	return read;
+	return readm;
 }
 
 /**
@@ -824,7 +828,8 @@ int transport_write(rdpTransport* transport, wStream* s)
 
 	while (length > 0)
 	{
-		status = BIO_write(transport->frontBio, Stream_Pointer(s), length);
+		//status = BIO_write(transport->frontBio, Stream_Pointer(s), length);
+		status = write(STDOUT_FILENO, Stream_Pointer(s), length);
 
 		if (status <= 0)
 		{
@@ -1074,7 +1079,7 @@ int transport_check_fds(rdpTransport* transport)
 			return -1;
 		}
 
-		now = GetTickCount64();
+		//now = GetTickCount64();
 	}
 
 	if (now >= dueDate)

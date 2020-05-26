@@ -48,6 +48,7 @@ extern "C"
 {
 #endif
 
+	__attribute__((no_sanitize("undefined")))
 	static INLINE void BitStream_Prefetch(wBitStream* _bs)
 	{
 		(_bs->prefetch) = 0;
