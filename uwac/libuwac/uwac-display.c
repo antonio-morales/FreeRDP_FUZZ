@@ -661,53 +661,35 @@ UwacReturnCode UwacDisplayQueryShmFormats(const UwacDisplay* display, enum wl_sh
 	return UWAC_SUCCESS;
 }
 
-uint32_t UwacDisplayGetNbOutputs(const UwacDisplay* display)
+uint32_t UwacDisplayGetNbOutputs(UwacDisplay* display)
 {
 	return wl_list_length(&display->outputs);
 }
 
-const UwacOutput* UwacDisplayGetOutput(UwacDisplay* display, int index)
+UwacOutput* UwacDisplayGetOutput(UwacDisplay* display, int index)
 {
-	int i, display_count;
-	UwacOutput* ret = NULL;
+	struct wl_list* l;
+	int i;
 
 	if (!display)
 		return NULL;
 
-	display_count = wl_list_length(&display->outputs);
-	if (display_count <= index)
-		return NULL;
+	for (i = 0, l = &display->outputs; l && i < index; i++, l = l->next)
+		;
 
-	i = 0;
-	wl_list_for_each(ret, &display->outputs, link)
-	{
-		if (i == index)
-			break;
-		i++;
-	}
-
-	if (!ret)
+	if (!l)
 	{
 		display->last_error = UWAC_NOT_FOUND;
 		return NULL;
 	}
 
 	display->last_error = UWAC_SUCCESS;
-	return ret;
+	return container_of(l, UwacOutput, link);
 }
 
-UwacReturnCode UwacOutputGetResolution(const UwacOutput* output, UwacSize* resolution)
+UwacReturnCode UwacOutputGetResolution(UwacOutput* output, UwacSize* resolution)
 {
-	if ((output->resolution.height <= 0) || (output->resolution.width <= 0))
-		return UWAC_ERROR_INTERNAL;
-
 	*resolution = output->resolution;
-	return UWAC_SUCCESS;
-}
-
-UwacReturnCode UwacOutputGetPosition(const UwacOutput* output, UwacPosition* pos)
-{
-	*pos = output->position;
 	return UWAC_SUCCESS;
 }
 

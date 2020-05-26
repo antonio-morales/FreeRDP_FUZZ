@@ -24,8 +24,6 @@
 
 #include "shadow_encoder.h"
 
-#define TAG CLIENT_TAG("shadow")
-
 int shadow_encoder_preferred_fps(rdpShadowEncoder* encoder)
 {
 	/* Return preferred fps calculated according to the last
@@ -402,7 +400,6 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 
 	if ((codecs & FREERDP_CODEC_REMOTEFX) && !(encoder->codecs & FREERDP_CODEC_REMOTEFX))
 	{
-		WLog_DBG(TAG, "initializing RemoteFX encoder");
 		status = shadow_encoder_init_rfx(encoder);
 
 		if (status < 0)
@@ -411,7 +408,6 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 
 	if ((codecs & FREERDP_CODEC_NSCODEC) && !(encoder->codecs & FREERDP_CODEC_NSCODEC))
 	{
-		WLog_DBG(TAG, "initializing NSCodec encoder");
 		status = shadow_encoder_init_nsc(encoder);
 
 		if (status < 0)
@@ -420,7 +416,6 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 
 	if ((codecs & FREERDP_CODEC_PLANAR) && !(encoder->codecs & FREERDP_CODEC_PLANAR))
 	{
-		WLog_DBG(TAG, "initializing planar bitmap encoder");
 		status = shadow_encoder_init_planar(encoder);
 
 		if (status < 0)
@@ -429,7 +424,6 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 
 	if ((codecs & FREERDP_CODEC_INTERLEAVED) && !(encoder->codecs & FREERDP_CODEC_INTERLEAVED))
 	{
-		WLog_DBG(TAG, "initializing interleaved bitmap encoder");
 		status = shadow_encoder_init_interleaved(encoder);
 
 		if (status < 0)
@@ -439,7 +433,6 @@ int shadow_encoder_prepare(rdpShadowEncoder* encoder, UINT32 codecs)
 	if ((codecs & (FREERDP_CODEC_AVC420 | FREERDP_CODEC_AVC444)) &&
 	    !(encoder->codecs & (FREERDP_CODEC_AVC420 | FREERDP_CODEC_AVC444)))
 	{
-		WLog_DBG(TAG, "initializing H.264 encoder");
 		status = shadow_encoder_init_h264(encoder);
 
 		if (status < 0)

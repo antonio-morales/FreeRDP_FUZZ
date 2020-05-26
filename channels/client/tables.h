@@ -37,7 +37,7 @@ struct _STATIC_SUBSYSTEM_ENTRY
 {
 	const char* name;
 	const char* type;
-	UINT (*entry)();
+	void (*entry)(void);
 };
 typedef struct _STATIC_SUBSYSTEM_ENTRY STATIC_SUBSYSTEM_ENTRY;
 

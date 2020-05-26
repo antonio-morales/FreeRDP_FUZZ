@@ -170,7 +170,7 @@ static BOOL wl_pre_connect(freerdp* instance)
 {
 	rdpSettings* settings;
 	wlfContext* context;
-	const UwacOutput* output;
+	UwacOutput* output;
 	UwacSize resolution;
 
 	if (!instance)
@@ -191,9 +191,9 @@ static BOOL wl_pre_connect(freerdp* instance)
 	if (settings->Fullscreen)
 	{
 		// Use the resolution of the first display output
-		output = UwacDisplayGetOutput(context->display, 0);
+		output = UwacDisplayGetOutput(context->display, 1);
 
-		if ((output != NULL) && (UwacOutputGetResolution(output, &resolution) == UWAC_SUCCESS))
+		if (output != NULL && UwacOutputGetResolution(output, &resolution) == UWAC_SUCCESS)
 		{
 			settings->DesktopWidth = (UINT32)resolution.width;
 			settings->DesktopHeight = (UINT32)resolution.height;
@@ -216,7 +216,6 @@ static BOOL wl_post_connect(freerdp* instance)
 	UwacWindow* window;
 	wlfContext* context;
 	rdpSettings* settings;
-	char* title = "FreeRDP";
 	UINT32 w, h;
 
 	if (!instance || !instance->context)
@@ -224,9 +223,6 @@ static BOOL wl_post_connect(freerdp* instance)
 
 	context = (wlfContext*)instance->context;
 	settings = instance->context->settings;
-
-	if (settings->WindowTitle)
-		title = settings->WindowTitle;
 
 	if (!gdi_init(instance, PIXEL_FORMAT_BGRA32))
 		return FALSE;
@@ -257,7 +253,7 @@ static BOOL wl_post_connect(freerdp* instance)
 		return FALSE;
 
 	UwacWindowSetFullscreenState(window, NULL, instance->context->settings->Fullscreen);
-	UwacWindowSetTitle(window, title);
+	UwacWindowSetTitle(window, "FreeRDP");
 	UwacWindowSetOpaqueRegion(context->window, 0, 0, w, h);
 	instance->update->BeginPaint = wl_begin_paint;
 	instance->update->EndPaint = wl_end_paint;
@@ -602,30 +598,18 @@ int main(int argc, char* argv[])
 	int status;
 	RDP_CLIENT_ENTRY_POINTS clientEntryPoints;
 	rdpContext* context;
-	rdpSettings* settings;
-	wlfContext* wlc;
-
 	RdpClientEntry(&clientEntryPoints);
 	context = freerdp_client_context_new(&clientEntryPoints);
+
 	if (!context)
 		goto fail;
-	wlc = (wlfContext*)context;
-	settings = context->settings;
 
-	status = freerdp_client_settings_parse_command_line(settings, argc, argv, FALSE);
-	status = freerdp_client_settings_command_line_status_print(settings, status, argc, argv);
+	status = freerdp_client_settings_parse_command_line(context->settings, argc, argv, FALSE);
+	status =
+	    freerdp_client_settings_command_line_status_print(context->settings, status, argc, argv);
 
 	if (status)
-	{
-		BOOL list = settings->ListMonitors;
-		if (list)
-			wlf_list_monitors(wlc);
-
-		freerdp_client_context_free(context);
-		if (list)
-			return 0;
-		return status;
-	}
+		return 0;
 
 	if (freerdp_client_start(context) != 0)
 		goto fail;

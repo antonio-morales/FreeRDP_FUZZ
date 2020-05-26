@@ -23,16 +23,6 @@
 
 #include <winpr/collections.h>
 
-struct _wStack
-{
-	size_t size;
-	size_t capacity;
-	void** array;
-	CRITICAL_SECTION lock;
-	BOOL synchronized;
-	wObject object;
-};
-
 /**
  * C equivalent of the C# Stack Class:
  * http://msdn.microsoft.com/en-us/library/system.collections.stack.aspx
@@ -46,9 +36,9 @@ struct _wStack
  * Gets the number of elements contained in the Stack.
  */
 
-size_t Stack_Count(wStack* stack)
+int Stack_Count(wStack* stack)
 {
-	size_t ret;
+	int ret;
 
 	if (stack->synchronized)
 		EnterCriticalSection(&stack->lock);
@@ -70,13 +60,6 @@ BOOL Stack_IsSynchronized(wStack* stack)
 	return stack->synchronized;
 }
 
-wObject* Stack_Object(wStack* stack)
-{
-	if (!stack)
-		return NULL;
-	return &stack->object;
-}
-
 /**
  * Methods
  */
@@ -87,7 +70,7 @@ wObject* Stack_Object(wStack* stack)
 
 void Stack_Clear(wStack* stack)
 {
-	size_t index;
+	int index;
 
 	if (stack->synchronized)
 		EnterCriticalSection(&stack->lock);
@@ -110,9 +93,9 @@ void Stack_Clear(wStack* stack)
  * Determines whether an element is in the Stack.
  */
 
-BOOL Stack_Contains(wStack* stack, const void* obj)
+BOOL Stack_Contains(wStack* stack, void* obj)
 {
-	size_t i;
+	int i;
 	BOOL found = FALSE;
 
 	if (stack->synchronized)
@@ -144,11 +127,13 @@ void Stack_Push(wStack* stack, void* obj)
 
 	if ((stack->size + 1) >= stack->capacity)
 	{
-		const size_t new_cap = stack->capacity * 2;
-		void** new_arr = (void**)realloc(stack->array, sizeof(void*) * new_cap);
+		int new_cap;
+		void** new_arr;
+		new_cap = stack->capacity * 2;
+		new_arr = (void**)realloc(stack->array, sizeof(void*) * new_cap);
 
 		if (!new_arr)
-			goto end;
+			return;
 
 		stack->array = new_arr;
 		stack->capacity = new_cap;
@@ -156,7 +141,6 @@ void Stack_Push(wStack* stack, void* obj)
 
 	stack->array[(stack->size)++] = obj;
 
-end:
 	if (stack->synchronized)
 		LeaveCriticalSection(&stack->lock);
 }
@@ -227,11 +211,13 @@ wStack* Stack_New(BOOL synchronized)
 		goto out_free;
 
 	if (stack->synchronized && !InitializeCriticalSectionAndSpinCount(&stack->lock, 4000))
-		goto out_free;
+		goto out_free_array;
 
 	return stack;
+out_free_array:
+	free(stack->array);
 out_free:
-	Stack_Free(stack);
+	free(stack);
 	return NULL;
 }
 

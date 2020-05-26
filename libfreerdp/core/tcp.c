@@ -779,7 +779,10 @@ struct addrinfo* freerdp_tcp_resolve_host(const char* hostname, int port, int ai
 	status = getaddrinfo(hostname, service, &hints, &result);
 
 	if (status)
+	{
+		freeaddrinfo(result);
 		return NULL;
+	}
 
 	return result;
 }

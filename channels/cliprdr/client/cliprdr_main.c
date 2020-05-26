@@ -539,10 +539,8 @@ static UINT cliprdr_client_capabilities(CliprdrClientContext* context,
                                         const CLIPRDR_CAPABILITIES* capabilities)
 {
 	wStream* s;
-	UINT32 flags;
 	const CLIPRDR_GENERAL_CAPABILITY_SET* generalCapabilitySet;
 	cliprdrPlugin* cliprdr = (cliprdrPlugin*)context->handle;
-
 	s = cliprdr_packet_new(CB_CLIP_CAPS, 0, 4 + CB_CAPSTYPE_GENERAL_LEN);
 
 	if (!s)
@@ -557,27 +555,7 @@ static UINT cliprdr_client_capabilities(CliprdrClientContext* context,
 	Stream_Write_UINT16(s, generalCapabilitySet->capabilitySetType);   /* capabilitySetType */
 	Stream_Write_UINT16(s, generalCapabilitySet->capabilitySetLength); /* lengthCapability */
 	Stream_Write_UINT32(s, generalCapabilitySet->version);             /* version */
-	flags = generalCapabilitySet->generalFlags;
-
-	/* Client capabilities are sent in response to server capabilities.
-	 * -> Do not request features the server does not support.
-	 * -> Update clipboard context feature state to what was agreed upon.
-	 */
-	if (!cliprdr->useLongFormatNames)
-		flags &= ~CB_USE_LONG_FORMAT_NAMES;
-	if (!cliprdr->streamFileClipEnabled)
-		flags &= ~CB_STREAM_FILECLIP_ENABLED;
-	if (!cliprdr->fileClipNoFilePaths)
-		flags &= ~CB_FILECLIP_NO_FILE_PATHS;
-	if (!cliprdr->canLockClipData)
-		flags &= CB_CAN_LOCK_CLIPDATA;
-
-	cliprdr->useLongFormatNames = flags & CB_USE_LONG_FORMAT_NAMES;
-	cliprdr->streamFileClipEnabled = flags & CB_STREAM_FILECLIP_ENABLED;
-	cliprdr->fileClipNoFilePaths = flags & CB_FILECLIP_NO_FILE_PATHS;
-	cliprdr->canLockClipData = flags & CB_CAN_LOCK_CLIPDATA;
-
-	Stream_Write_UINT32(s, flags); /* generalFlags */
+	Stream_Write_UINT32(s, generalCapabilitySet->generalFlags);        /* generalFlags */
 	WLog_Print(cliprdr->log, WLOG_DEBUG, "ClientCapabilities");
 	return cliprdr_packet_send(cliprdr, s);
 }
@@ -594,7 +572,7 @@ static UINT cliprdr_temp_directory(CliprdrClientContext* context,
 	wStream* s;
 	WCHAR* wszTempDir = NULL;
 	cliprdrPlugin* cliprdr = (cliprdrPlugin*)context->handle;
-	s = cliprdr_packet_new(CB_TEMP_DIRECTORY, 0, 260 * sizeof(WCHAR));
+	s = cliprdr_packet_new(CB_TEMP_DIRECTORY, 0, 520 * 2);
 
 	if (!s)
 	{
@@ -607,13 +585,11 @@ static UINT cliprdr_temp_directory(CliprdrClientContext* context,
 	if (length < 0)
 		return ERROR_INTERNAL_ERROR;
 
-	/* Path must be 260 UTF16 characters with '\0' termination.
-	 * ensure this here */
-	if (length >= 260)
-		length = 259;
+	if (length > 520)
+		length = 520;
 
-	Stream_Write_UTF16_String(s, wszTempDir, length);
-	Stream_Zero(s, 520 - (length * sizeof(WCHAR)));
+	Stream_Write(s, wszTempDir, (size_t)length * 2);
+	Stream_Zero(s, (520 - (size_t)length) * 2);
 	free(wszTempDir);
 	WLog_Print(cliprdr->log, WLOG_DEBUG, "TempDirectory: %s", tempDirectory->szTempDir);
 	return cliprdr_packet_send(cliprdr, s);
@@ -1163,6 +1139,10 @@ BOOL VCAPITYPE VirtualChannelEntryEx(PCHANNEL_ENTRY_POINTS pEntryPoints, PVOID p
 	}
 
 	cliprdr->log = WLog_Get("com.freerdp.channels.cliprdr.client");
+	cliprdr->useLongFormatNames = TRUE;
+	cliprdr->streamFileClipEnabled = FALSE;
+	cliprdr->fileClipNoFilePaths = TRUE;
+	cliprdr->canLockClipData = FALSE;
 	WLog_Print(cliprdr->log, WLOG_DEBUG, "VirtualChannelEntryEx");
 	CopyMemory(&(cliprdr->channelEntryPoints), pEntryPoints,
 	           sizeof(CHANNEL_ENTRY_POINTS_FREERDP_EX));

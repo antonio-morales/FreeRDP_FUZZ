@@ -142,9 +142,10 @@ static UINT serial_process_irp_create(SERIAL_DEVICE* serial, IRP* irp)
 	Stream_Seek_UINT32(irp->input);                    /* CreateOptions (4 bytes) */
 	Stream_Read_UINT32(irp->input, PathLength);        /* PathLength (4 bytes) */
 
-	if (!Stream_SafeSeek(irp->input, PathLength)) /* Path (variable) */
+	if (Stream_GetRemainingLength(irp->input) < PathLength)
 		return ERROR_INVALID_DATA;
 
+	Stream_Seek(irp->input, PathLength); /* Path (variable) */
 	assert(PathLength == 0);             /* MS-RDPESP 2.2.2.2 */
 #ifndef _WIN32
 	/* Windows 2012 server sends on a first call :
@@ -299,7 +300,6 @@ static UINT serial_process_irp_write(SERIAL_DEVICE* serial, IRP* irp)
 {
 	UINT32 Length;
 	UINT64 Offset;
-	void* ptr;
 	DWORD nbWritten = 0;
 
 	if (Stream_GetRemainingLength(irp->input) < 32)
@@ -307,9 +307,7 @@ static UINT serial_process_irp_write(SERIAL_DEVICE* serial, IRP* irp)
 
 	Stream_Read_UINT32(irp->input, Length); /* Length (4 bytes) */
 	Stream_Read_UINT64(irp->input, Offset); /* Offset (8 bytes) */
-	if (!Stream_SafeSeek(irp->input, 20))   /* Padding (20 bytes) */
-		return ERROR_INVALID_DATA;
-
+	Stream_Seek(irp->input, 20);            /* Padding (20 bytes) */
 	/* MS-RDPESP 3.2.5.1.5: The Offset field is ignored
 	 * assert(Offset == 0);
 	 *
@@ -319,11 +317,8 @@ static UINT serial_process_irp_write(SERIAL_DEVICE* serial, IRP* irp)
 	WLog_Print(serial->log, WLOG_DEBUG, "writing %" PRIu32 " bytes to %s", Length,
 	           serial->device.name);
 
-	ptr = Stream_Pointer(irp->input);
-	if (!Stream_SafeSeek(irp->input, Length))
-		return ERROR_INVALID_DATA;
 	/* FIXME: CommWriteFile to be replaced by WriteFile */
-	if (CommWriteFile(serial->hComm, ptr, Length, &nbWritten, NULL))
+	if (CommWriteFile(serial->hComm, Stream_Pointer(irp->input), Length, &nbWritten, NULL))
 	{
 		irp->IoStatus = STATUS_SUCCESS;
 	}

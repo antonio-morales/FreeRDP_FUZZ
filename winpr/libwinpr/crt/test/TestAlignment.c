@@ -12,7 +12,7 @@ int TestAlignment(int argc, char* argv[])
 	/* Alignment should be 2^N where N is a positive integer */
 
 	alignment = 16;
-	offset = 8;
+	offset = 5;
 
 	/* _aligned_malloc */
 

@@ -43,15 +43,6 @@
 #endif
 #define TAG WINPR_TAG("utils")
 
-struct winpr_sam
-{
-	FILE* fp;
-	char* line;
-	char* buffer;
-	char* context;
-	BOOL readOnly;
-};
-
 WINPR_SAM* SamOpen(const char* filename, BOOL readOnly)
 {
 	FILE* fp = NULL;
@@ -107,7 +98,6 @@ static BOOL SamLookupStart(WINPR_SAM* sam)
 	if (fileSize < 1)
 		return FALSE;
 
-	sam->context = NULL;
 	sam->buffer = (char*)malloc(fileSize + 2);
 
 	if (!sam->buffer)
@@ -130,7 +120,7 @@ static BOOL SamLookupStart(WINPR_SAM* sam)
 
 	sam->buffer[fileSize] = '\n';
 	sam->buffer[fileSize + 1] = '\0';
-	sam->line = strtok_s(sam->buffer, "\n", &sam->context);
+	sam->line = strtok(sam->buffer, "\n");
 	return TRUE;
 }
 
@@ -310,7 +300,7 @@ WINPR_SAM_ENTRY* SamLookupUserA(WINPR_SAM* sam, LPSTR User, UINT32 UserLength, L
 		}
 
 		SamResetEntry(entry);
-		sam->line = strtok_s(NULL, "\n", &sam->context);
+		sam->line = strtok(NULL, "\n");
 	}
 
 out_fail:
@@ -425,7 +415,7 @@ WINPR_SAM_ENTRY* SamLookupUserW(WINPR_SAM* sam, LPWSTR User, UINT32 UserLength, 
 		}
 
 		SamResetEntry(entry);
-		sam->line = strtok_s(NULL, "\n", &sam->context);
+		sam->line = strtok(NULL, "\n");
 	}
 
 out_fail:

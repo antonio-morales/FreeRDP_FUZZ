@@ -308,7 +308,8 @@ static UINT disp_plugin_initialize(IWTSPlugin* pPlugin, IWTSVirtualChannelManage
 	disp->listener_callback->plugin = pPlugin;
 	disp->listener_callback->channel_mgr = pChannelMgr;
 	status = pChannelMgr->CreateListener(pChannelMgr, DISP_DVC_CHANNEL_NAME, 0,
-	                                     &disp->listener_callback->iface, &(disp->listener));
+	                                     (IWTSListenerCallback*)disp->listener_callback,
+	                                     &(disp->listener));
 	disp->listener->pInterface = disp->iface.pInterface;
 	return status;
 }
@@ -321,14 +322,6 @@ static UINT disp_plugin_initialize(IWTSPlugin* pPlugin, IWTSVirtualChannelManage
 static UINT disp_plugin_terminated(IWTSPlugin* pPlugin)
 {
 	DISP_PLUGIN* disp = (DISP_PLUGIN*)pPlugin;
-
-	if (disp && disp->listener_callback)
-	{
-		IWTSVirtualChannelManager* mgr = disp->listener_callback->channel_mgr;
-		if (mgr)
-			IFCALL(mgr->DestroyListener, mgr, disp->listener);
-	}
-
 	free(disp->listener_callback);
 	free(disp->iface.pInterface);
 	free(pPlugin);

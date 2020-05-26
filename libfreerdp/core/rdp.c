@@ -143,7 +143,8 @@ void rdp_write_security_header(wStream* s, UINT16 flags)
 	Stream_Write_UINT16(s, 0);     /* flagsHi (unused) */
 }
 
-BOOL rdp_read_share_control_header(wStream* s, UINT16* length, UINT16* type, UINT16* channel_id)
+BOOL rdp_read_share_control_header(wStream* s, UINT16* tpktLength, UINT16* remainingLength,
+                                   UINT16* type, UINT16* channel_id)
 {
 	UINT16 len;
 	if (Stream_GetRemainingLength(s) < 2)
@@ -152,8 +153,6 @@ BOOL rdp_read_share_control_header(wStream* s, UINT16* length, UINT16* type, UIN
 	/* Share Control Header */
 	Stream_Read_UINT16(s, len); /* totalLength */
 
-	*length = len;
-
 	/* If length is 0x8000 then we actually got a flow control PDU that we should ignore
 	 http://msdn.microsoft.com/en-us/library/cc240576.aspx */
 	if (len == 0x8000)
@@ -161,20 +160,34 @@ BOOL rdp_read_share_control_header(wStream* s, UINT16* length, UINT16* type, UIN
 		if (!rdp_read_flow_control_pdu(s, type, channel_id))
 			return FALSE;
 		*channel_id = 0;
-		*length = 8; /* Flow control PDU is 8 bytes */
+		if (tpktLength)
+			*tpktLength = 8; /* Flow control PDU is 8 bytes */
+		if (remainingLength)
+			*remainingLength = 0;
 		return TRUE;
 	}
 
 	if ((len < 4) || ((len - 2) > Stream_GetRemainingLength(s)))
 		return FALSE;
 
+	if (tpktLength)
+		*tpktLength = len;
+
 	Stream_Read_UINT16(s, *type); /* pduType */
 	*type &= 0x0F;                /* type is in the 4 least significant bits */
 
-	if (len > 4)
+	if (len > 5)
+	{
 		Stream_Read_UINT16(s, *channel_id); /* pduSource */
+		if (remainingLength)
+			*remainingLength = len - 6;
+	}
 	else
+	{
 		*channel_id = 0; /* Windows XP can send such short DEACTIVATE_ALL PDUs. */
+		if (remainingLength)
+			*remainingLength = len - 4;
+	}
 
 	return TRUE;
 }
@@ -372,7 +385,6 @@ BOOL rdp_read_header(rdpRdp* rdp, wStream* s, UINT16* length, UINT16* channelId)
 	MCSPDU = (rdp->settings->ServerMode) ? DomainMCSPDU_SendDataRequest
 	                                     : DomainMCSPDU_SendDataIndication;
 
-	*channelId = 0; /* Initialize in case of early abort */
 	if (!tpkt_read_header(s, length))
 		return FALSE;
 
@@ -1099,7 +1111,7 @@ int rdp_recv_out_of_sequence_pdu(rdpRdp* rdp, wStream* s)
 	UINT16 length;
 	UINT16 channelId;
 
-	if (!rdp_read_share_control_header(s, &length, &type, &channelId))
+	if (!rdp_read_share_control_header(s, &length, NULL, &type, &channelId))
 		return -1;
 
 	if (type == PDU_TYPE_DATA)
@@ -1275,7 +1287,6 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 	int rc = 0;
 	UINT16 length;
 	UINT16 pduType;
-	UINT16 pduLength;
 	UINT16 pduSource;
 	UINT16 channelId = 0;
 	UINT16 securityFlags = 0;
@@ -1331,20 +1342,16 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 		{
 			wStream sub;
 			size_t diff;
+			UINT16 remain;
 
-			if (!rdp_read_share_control_header(s, &pduLength, &pduType, &pduSource))
+			if (!rdp_read_share_control_header(s, NULL, &remain, &pduType, &pduSource))
 			{
 				WLog_ERR(TAG, "rdp_recv_tpkt_pdu: rdp_read_share_control_header() fail");
 				return -1;
 			}
 
-			/* Remove header data. */
-			if (pduLength > 5)
-				pduLength -= 6;
-			else
-				pduLength -= 4;
-			Stream_StaticInit(&sub, Stream_Pointer(s), pduLength);
-			if (!Stream_SafeSeek(s, pduLength))
+			Stream_StaticInit(&sub, Stream_Pointer(s), remain);
+			if (!Stream_SafeSeek(s, remain))
 				return -1;
 
 			rdp->settings->PduSource = pduSource;
@@ -1375,7 +1382,7 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 				case PDU_TYPE_FLOW_TEST:
 					WLog_DBG(TAG, "flow message 0x%04" PRIX16 "", pduType);
 					/* http://msdn.microsoft.com/en-us/library/cc240576.aspx */
-					if (!Stream_SafeSeek(&sub, pduLength))
+					if (!Stream_SafeSeek(&sub, remain))
 						return -1;
 					break;
 
@@ -1743,7 +1750,6 @@ rdpRdp* rdp_new(rdpContext* context)
 	if (!rdp)
 		return NULL;
 
-	InitializeCriticalSection(&rdp->critical);
 	rdp->context = context;
 	rdp->instance = context->instance;
 	flags = 0;
@@ -1756,7 +1762,7 @@ rdpRdp* rdp_new(rdpContext* context)
 		context->settings = freerdp_settings_new(flags);
 
 		if (!context->settings)
-			goto fail;
+			goto out_free;
 
 		newSettings = TRUE;
 	}
@@ -1777,67 +1783,93 @@ rdpRdp* rdp_new(rdpContext* context)
 	rdp->transport = transport_new(context);
 
 	if (!rdp->transport)
-		goto fail;
+		goto out_free_settings;
 
 	rdp->license = license_new(rdp);
 
 	if (!rdp->license)
-		goto fail;
+		goto out_free_transport;
 
 	rdp->input = input_new(rdp);
 
 	if (!rdp->input)
-		goto fail;
+		goto out_free_license;
 
 	rdp->update = update_new(rdp);
 
 	if (!rdp->update)
-		goto fail;
+		goto out_free_input;
 
 	rdp->fastpath = fastpath_new(rdp);
 
 	if (!rdp->fastpath)
-		goto fail;
+		goto out_free_update;
 
 	rdp->nego = nego_new(rdp->transport);
 
 	if (!rdp->nego)
-		goto fail;
+		goto out_free_fastpath;
 
 	rdp->mcs = mcs_new(rdp->transport);
 
 	if (!rdp->mcs)
-		goto fail;
+		goto out_free_nego;
 
 	rdp->redirection = redirection_new();
 
 	if (!rdp->redirection)
-		goto fail;
+		goto out_free_mcs;
 
 	rdp->autodetect = autodetect_new();
 
 	if (!rdp->autodetect)
-		goto fail;
+		goto out_free_redirection;
 
 	rdp->heartbeat = heartbeat_new();
 
 	if (!rdp->heartbeat)
-		goto fail;
+		goto out_free_autodetect;
 
 	rdp->multitransport = multitransport_new();
 
 	if (!rdp->multitransport)
-		goto fail;
+		goto out_free_heartbeat;
 
 	rdp->bulk = bulk_new(context);
 
 	if (!rdp->bulk)
-		goto fail;
+		goto out_free_multitransport;
 
 	return rdp;
+out_free_multitransport:
+	multitransport_free(rdp->multitransport);
+out_free_heartbeat:
+	heartbeat_free(rdp->heartbeat);
+out_free_autodetect:
+	autodetect_free(rdp->autodetect);
+out_free_redirection:
+	redirection_free(rdp->redirection);
+out_free_mcs:
+	mcs_free(rdp->mcs);
+out_free_nego:
+	nego_free(rdp->nego);
+out_free_fastpath:
+	fastpath_free(rdp->fastpath);
+out_free_update:
+	update_free(rdp->update);
+out_free_input:
+	input_free(rdp->input);
+out_free_license:
+	license_free(rdp->license);
+out_free_transport:
+	transport_free(rdp->transport);
+out_free_settings:
 
-fail:
-	rdp_free(rdp);
+	if (newSettings)
+		freerdp_settings_free(rdp->settings);
+
+out_free:
+	free(rdp);
 	return NULL;
 }
 
@@ -1917,7 +1949,6 @@ void rdp_free(rdpRdp* rdp)
 {
 	if (rdp)
 	{
-		DeleteCriticalSection(&rdp->critical);
 		winpr_RC4_Free(rdp->rc4_decrypt_key);
 		winpr_RC4_Free(rdp->rc4_encrypt_key);
 		winpr_Cipher_Free(rdp->fips_encrypt);

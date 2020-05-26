@@ -48,13 +48,10 @@ typedef struct proxy_plugin
 
 	/* proxy hooks. a module can set these function pointers to register hooks */
 	proxyHookFn ClientPreConnect;
-	proxyHookFn ClientPostConnect;
 	proxyHookFn ClientLoginFailure;
-	proxyHookFn ClientEndPaint;
 	proxyHookFn ServerPostConnect;
 	proxyHookFn ServerChannelsInit;
 	proxyHookFn ServerChannelsFree;
-	proxyHookFn ServerSessionEnd;
 
 	/* proxy filters. a module can set these function pointers to register filters */
 	proxyFilterFn KeyboardEvent;
@@ -109,7 +106,7 @@ typedef struct channel_data_event_info
 
 	/* actual data */
 	const BYTE* data;
-	size_t data_len;
+	int data_len;
 } proxyChannelDataEventInfo;
 #define WINPR_PACK_POP
 #include <winpr/pack.h>

@@ -2548,7 +2548,8 @@ static BOOL rdp_read_large_pointer_capability_set(wStream* s, rdpSettings* setti
 		return FALSE;
 
 	Stream_Read_UINT16(s, largePointerSupportFlags); /* largePointerSupportFlags (2 bytes) */
-	settings->LargePointerFlag &= largePointerSupportFlags;
+	settings->LargePointerFlag =
+	    largePointerSupportFlags & (LARGE_POINTER_FLAG_96x96 | LARGE_POINTER_FLAG_384x384);
 	if ((largePointerSupportFlags & ~(LARGE_POINTER_FLAG_96x96 | LARGE_POINTER_FLAG_384x384)) != 0)
 	{
 		WLog_WARN(
@@ -2702,9 +2703,9 @@ static BOOL rdp_read_bitmap_codec_guid(wStream* s, GUID* guid)
 	if (Stream_GetRemainingLength(s) < 16)
 		return FALSE;
 	Stream_Read(s, g, 16);
-	guid->Data1 = ((UINT32)g[3] << 24U) | ((UINT32)g[2] << 16U) | (g[1] << 8U) | g[0];
-	guid->Data2 = (g[5] << 8U) | g[4];
-	guid->Data3 = (g[7] << 8U) | g[6];
+	guid->Data1 = (g[3] << 24) | (g[2] << 16) | (g[1] << 8) | g[0];
+	guid->Data2 = (g[5] << 8) | g[4];
+	guid->Data3 = (g[7] << 8) | g[6];
 	guid->Data4[0] = g[8];
 	guid->Data4[1] = g[9];
 	guid->Data4[2] = g[10];
@@ -3887,7 +3888,6 @@ BOOL rdp_recv_demand_active(rdpRdp* rdp, wStream* s)
 {
 	UINT16 channelId;
 	UINT16 pduType;
-	UINT16 pduLength;
 	UINT16 pduSource;
 	UINT16 length;
 	UINT16 numberCapabilities;
@@ -3900,7 +3900,7 @@ BOOL rdp_recv_demand_active(rdpRdp* rdp, wStream* s)
 	if (freerdp_shall_disconnect(rdp->instance))
 		return TRUE;
 
-	if (!rdp_read_share_control_header(s, &pduLength, &pduType, &pduSource))
+	if (!rdp_read_share_control_header(s, NULL, NULL, &pduType, &pduSource))
 	{
 		WLog_ERR(TAG, "rdp_read_share_control_header failed");
 		return FALSE;

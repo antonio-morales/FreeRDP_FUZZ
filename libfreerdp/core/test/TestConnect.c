@@ -180,8 +180,6 @@ static int testSuccess(int port)
 
 	path = GetCombinedPath(exe, "Sample");
 	wpath = GetCombinedPath(wexe, "Sample");
-	free(exe);
-	exe = NULL;
 
 	if (!path || !wpath)
 		goto fail;
@@ -228,7 +226,6 @@ static int testSuccess(int port)
 
 fail:
 	free(exe);
-	free(wexe);
 	free(path);
 	free(wpath);
 	free(commandLine);

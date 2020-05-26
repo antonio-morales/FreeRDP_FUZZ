@@ -282,10 +282,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 				break;
 
 			bs->mask = ((1 << kr) - 1);
-			if (kr > 0)
-				code = (UINT16)((bs->accumulator >> (32 - kr)) & bs->mask);
-			else
-				code = 0;
+			code = (UINT16)((bs->accumulator >> (32 - kr)) & bs->mask);
 			BitStream_Shift(bs, kr);
 
 			/* add (vk << kr) to code */
@@ -393,10 +390,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 				break;
 
 			bs->mask = ((1 << kr) - 1);
-			if (kr > 0)
-				code = (UINT16)((bs->accumulator >> (32 - kr)) & bs->mask);
-			else
-				code = 0;
+			code = (UINT16)((bs->accumulator >> (32 - kr)) & bs->mask);
 			BitStream_Shift(bs, kr);
 
 			/* add (vk << kr) to code */
@@ -483,10 +477,7 @@ int rfx_rlgr_decode(RLGR_MODE mode, const BYTE* pSrcData, UINT32 SrcSize, INT16*
 					break;
 
 				bs->mask = ((1 << nIdx) - 1);
-				if (nIdx > 0)
-					val1 = ((bs->accumulator >> (32 - nIdx)) & bs->mask);
-				else
-					val1 = 0;
+				val1 = ((bs->accumulator >> (32 - nIdx)) & bs->mask);
 				BitStream_Shift(bs, nIdx);
 
 				val2 = code - val1;

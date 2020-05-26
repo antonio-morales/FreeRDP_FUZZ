@@ -185,8 +185,7 @@ BOOL xf_event_action_script_init(xfContext* xfc)
 
 	while (fgets(buffer, sizeof(buffer), actionScript))
 	{
-		char* context = NULL;
-		strtok_s(buffer, "\n", &context);
+		strtok(buffer, "\n");
 		xevent = _strdup(buffer);
 
 		if (!xevent || ArrayList_Add(xfc->xevents, xevent) < 0)
@@ -254,8 +253,7 @@ static BOOL xf_event_execute_action_script(xfContext* xfc, const XEvent* event)
 
 	while (fgets(buffer, sizeof(buffer), actionScript))
 	{
-		char* context = NULL;
-		strtok_s(buffer, "\n", &context);
+		strtok(buffer, "\n");
 	}
 
 	pclose(actionScript);
@@ -374,11 +372,11 @@ BOOL xf_generic_MotionNotify(xfContext* xfc, int x, int y, int state, Window win
 }
 static BOOL xf_event_MotionNotify(xfContext* xfc, const XMotionEvent* event, BOOL app)
 {
-	if (xfc->window)
-		xf_floatbar_set_root_y(xfc->window->floatbar, event->y);
-
 	if (xfc->use_xinput)
 		return TRUE;
+
+	if (xfc->window)
+		xf_floatbar_set_root_y(xfc->window->floatbar, event->y);
 
 	return xf_generic_MotionNotify(xfc, event->x, event->y, event->state, event->window, app);
 }

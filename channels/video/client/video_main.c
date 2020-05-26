@@ -220,14 +220,8 @@ error_frames:
 static PresentationContext* PresentationContext_new(VideoClientContext* video, BYTE PresentationId,
                                                     UINT32 x, UINT32 y, UINT32 width, UINT32 height)
 {
-	size_t s;
 	VideoClientContextPriv* priv = video->priv;
-	PresentationContext* ret;
-	s = width * height * 4ULL;
-	if (s > INT32_MAX)
-		return NULL;
-
-	ret = calloc(1, sizeof(*ret));
+	PresentationContext* ret = calloc(1, sizeof(*ret));
 	if (!ret)
 		return NULL;
 
@@ -249,7 +243,7 @@ static PresentationContext* PresentationContext_new(VideoClientContext* video, B
 		goto error_currentSample;
 	}
 
-	ret->surfaceData = BufferPool_Take(priv->surfacePool, s);
+	ret->surfaceData = BufferPool_Take(priv->surfacePool, width * height * 4);
 	if (!ret->surfaceData)
 	{
 		WLog_ERR(TAG, "unable to allocate surfaceData");
@@ -1048,7 +1042,7 @@ static UINT video_plugin_initialize(IWTSPlugin* plugin, IWTSVirtualChannelManage
 	callback->channel_mgr = channelMgr;
 
 	status = channelMgr->CreateListener(channelMgr, VIDEO_CONTROL_DVC_CHANNEL_NAME, 0,
-	                                    &callback->iface, &(video->controlListener));
+	                                    (IWTSListenerCallback*)callback, &(video->controlListener));
 
 	if (status != CHANNEL_RC_OK)
 		return status;
@@ -1067,7 +1061,7 @@ static UINT video_plugin_initialize(IWTSPlugin* plugin, IWTSVirtualChannelManage
 	callback->channel_mgr = channelMgr;
 
 	status = channelMgr->CreateListener(channelMgr, VIDEO_DATA_DVC_CHANNEL_NAME, 0,
-	                                    &callback->iface, &(video->dataListener));
+	                                    (IWTSListenerCallback*)callback, &(video->dataListener));
 
 	if (status == CHANNEL_RC_OK)
 		video->dataListener->pInterface = video->wtsPlugin.pInterface;
@@ -1083,19 +1077,6 @@ static UINT video_plugin_initialize(IWTSPlugin* plugin, IWTSVirtualChannelManage
 static UINT video_plugin_terminated(IWTSPlugin* pPlugin)
 {
 	VIDEO_PLUGIN* video = (VIDEO_PLUGIN*)pPlugin;
-
-	if (video->control_callback)
-	{
-		IWTSVirtualChannelManager* mgr = video->control_callback->channel_mgr;
-		if (mgr)
-			IFCALL(mgr->DestroyListener, mgr, video->controlListener);
-	}
-	if (video->data_callback)
-	{
-		IWTSVirtualChannelManager* mgr = video->data_callback->channel_mgr;
-		if (mgr)
-			IFCALL(mgr->DestroyListener, mgr, video->dataListener);
-	}
 
 	if (video->context)
 		VideoClientContextPriv_free(video->context->priv);

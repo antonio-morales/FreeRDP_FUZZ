@@ -130,7 +130,7 @@ static BOOL clear_decompress_subcode_rlex(wStream* s, UINT32 bitmapDataByteCount
 	UINT32 i;
 	UINT32 pixelCount;
 	UINT32 bitmapDataOffset;
-	size_t pixelIndex;
+	UINT32 pixelIndex;
 	UINT32 numBits;
 	BYTE startIndex;
 	BYTE stopIndex;
@@ -146,8 +146,6 @@ static BOOL clear_decompress_subcode_rlex(wStream* s, UINT32 bitmapDataByteCount
 		return FALSE;
 	}
 
-	if (Stream_GetRemainingLength(s) < 1)
-		return FALSE;
 	Stream_Read_UINT8(s, paletteCount);
 	bitmapDataOffset = 1 + (paletteCount * 3);
 
@@ -156,9 +154,6 @@ static BOOL clear_decompress_subcode_rlex(wStream* s, UINT32 bitmapDataByteCount
 		WLog_ERR(TAG, "paletteCount %" PRIu8 "", paletteCount);
 		return FALSE;
 	}
-
-	if (Stream_GetRemainingLength(s) < 3ULL * paletteCount)
-		return FALSE;
 
 	for (i = 0; i < paletteCount; i++)
 	{
@@ -304,7 +299,7 @@ static BOOL clear_decompress_subcode_rlex(wStream* s, UINT32 bitmapDataByteCount
 
 	if (pixelIndex != pixelCount)
 	{
-		WLog_ERR(TAG, "pixelIndex %" PRIdz " != pixelCount %" PRIu32 "", pixelIndex, pixelCount);
+		WLog_ERR(TAG, "pixelIndex %" PRIu32 " != pixelCount %" PRIu32 "", pixelIndex, pixelCount);
 		return FALSE;
 	}
 
@@ -783,7 +778,7 @@ static BOOL clear_decompress_bands_data(CLEAR_CONTEXT* clear, wStream* s, UINT32
 			if (vBarUpdate)
 			{
 				UINT32 x;
-				BYTE* pSrcPixel = NULL;
+				BYTE* pSrcPixel;
 				BYTE* dstBuffer;
 
 				if (clear->VBarStorageCursor >= CLEARCODEC_VBAR_SIZE)
@@ -826,9 +821,8 @@ static BOOL clear_decompress_bands_data(CLEAR_CONTEXT* clear, wStream* s, UINT32
 				if ((y + count) > vBarPixelCount)
 					count = (vBarPixelCount > y) ? (vBarPixelCount - y) : 0;
 
-				if (count > 0)
-					pSrcPixel =
-					    &vBarShortEntry->pixels[(y - vBarYOn) * GetBytesPerPixel(clear->format)];
+				pSrcPixel =
+				    &vBarShortEntry->pixels[(y - vBarYOn) * GetBytesPerPixel(clear->format)];
 
 				for (x = 0; x < count; x++)
 				{

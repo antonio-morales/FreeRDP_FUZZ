@@ -128,7 +128,6 @@ static INLINE void shadow_client_free_queued_message(void* obj)
 
 static BOOL shadow_client_context_new(freerdp_peer* peer, rdpShadowClient* client)
 {
-	const char bind_address[] = "bind-address,";
 	rdpSettings* settings;
 	rdpShadowServer* server;
 	const wObject cb = { NULL, NULL, NULL, shadow_client_free_queued_message, NULL };
@@ -158,8 +157,7 @@ static BOOL shadow_client_context_new(freerdp_peer* peer, rdpShadowClient* clien
 	if (!(settings->RdpKeyFile = _strdup(settings->PrivateKeyFile)))
 		goto fail_rdpkey_file;
 
-	if (server->ipcSocket && (strncmp(bind_address, server->ipcSocket,
-	                                  strnlen(bind_address, sizeof(bind_address))) != 0))
+	if (server->ipcSocket)
 	{
 		settings->LyncRdpMode = TRUE;
 		settings->CompressionEnabled = FALSE;
@@ -978,7 +976,6 @@ static BOOL shadow_client_send_surface_bits(rdpShadowClient* client, BYTE* pSrcD
 			return FALSE;
 		}
 
-		cmd.cmdType = CMDTYPE_STREAM_SURFACE_BITS;
 		cmd.bmp.codecID = settings->RemoteFxCodecId;
 		cmd.destLeft = 0;
 		cmd.destTop = 0;
@@ -1043,7 +1040,6 @@ static BOOL shadow_client_send_surface_bits(rdpShadowClient* client, BYTE* pSrcD
 		Stream_SetPosition(s, 0);
 		pSrcData = &pSrcData[(nYSrc * nSrcStep) + (nXSrc * 4)];
 		nsc_compose_message(encoder->nsc, s, pSrcData, nWidth, nHeight, nSrcStep);
-		cmd.cmdType = CMDTYPE_SET_SURFACE_BITS;
 		cmd.bmp.bpp = 32;
 		cmd.bmp.codecID = settings->NSCodecId;
 		cmd.destLeft = nXSrc;

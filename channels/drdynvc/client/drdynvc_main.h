@@ -37,16 +37,21 @@
 
 typedef struct drdynvc_plugin drdynvcPlugin;
 
+#define MAX_PLUGINS 32
+
 struct _DVCMAN
 {
 	IWTSVirtualChannelManager iface;
 
 	drdynvcPlugin* drdynvc;
 
-	wArrayList* plugin_names;
-	wArrayList* plugins;
+	size_t num_plugins;
+	const char* plugin_names[MAX_PLUGINS];
+	IWTSPlugin* plugins[MAX_PLUGINS];
 
-	wArrayList* listeners;
+	size_t num_listeners;
+	IWTSListener* listeners[MAX_PLUGINS];
+
 	wArrayList* channels;
 	wStreamPool* pool;
 };

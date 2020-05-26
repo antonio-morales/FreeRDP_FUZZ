@@ -58,7 +58,7 @@ wMessagePipe* MessagePipe_New()
 		goto error_in;
 
 	pipe->Out = MessageQueue_New(NULL);
-	if (!pipe->Out)
+	if (!pipe->In)
 		goto error_out;
 
 	return pipe;

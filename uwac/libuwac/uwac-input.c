@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <errno.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/mman.h>
@@ -70,10 +69,6 @@ static struct wl_buffer* create_pointer_buffer(UwacSeat* seat, const void* src, 
 	                              seat->pointer_image->width * 4, WL_SHM_FORMAT_ARGB8888);
 	wl_shm_pool_destroy(pool);
 
-	if (munmap(data, size) < 0)
-		fprintf(stderr, "%s: munmap(%p, %" PRIuz ") failed with [%d] %s\n", __FUNCTION__, data,
-		        size, errno, strerror(errno));
-
 error_mmap:
 	close(fd);
 	return buffer;
@@ -94,7 +89,6 @@ static UwacReturnCode set_cursor_image(UwacSeat* seat, uint32_t serial)
 	struct wl_cursor_image* image;
 	struct wl_surface* surface = NULL;
 	int32_t x = 0, y = 0;
-	int buffer_add_listener_success = -1;
 
 	if (!seat || !seat->display || !seat->default_cursor || !seat->default_cursor->images)
 		return UWAC_ERROR_INTERNAL;
@@ -129,12 +123,9 @@ static UwacReturnCode set_cursor_image(UwacSeat* seat, uint32_t serial)
 	}
 
 	if (buffer)
-	{
-		buffer_add_listener_success =
-		    wl_buffer_add_listener(buffer, &buffer_release_listener, seat);
-	}
+		wl_buffer_add_listener(buffer, &buffer_release_listener, seat);
 
-	if (surface && buffer_add_listener_success > -1)
+	if (surface)
 	{
 		wl_surface_attach(surface, buffer, -x, -y);
 		wl_surface_damage(surface, 0, 0, image->width, image->height);

@@ -144,7 +144,6 @@ static BOOL check_no_proxy(rdpSettings* settings, const char* no_proxy)
 	BOOL result = FALSE;
 	char* current;
 	char* copy;
-	char* context = NULL;
 	size_t host_len;
 	struct sockaddr_in sa4;
 	struct sockaddr_in6 sa6;
@@ -165,7 +164,7 @@ static BOOL check_no_proxy(rdpSettings* settings, const char* no_proxy)
 	if (!copy)
 		return FALSE;
 
-	current = strtok_s(copy, delimiter, &context);
+	current = strtok(copy, delimiter);
 
 	while (current && !result)
 	{
@@ -244,7 +243,7 @@ static BOOL check_no_proxy(rdpSettings* settings, const char* no_proxy)
 			}
 		}
 
-		current = strtok_s(NULL, delimiter, &context);
+		current = strtok(NULL, delimiter);
 	}
 
 	free(copy);

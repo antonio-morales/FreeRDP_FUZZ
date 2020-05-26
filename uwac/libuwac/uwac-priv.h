@@ -137,7 +137,6 @@ struct uwac_output
 	bool doneNeeded;
 	bool doneReceived;
 
-	UwacPosition position;
 	UwacSize resolution;
 	int transform;
 	int scale;
@@ -218,7 +217,6 @@ struct uwac_buffer
 #endif
 	struct wl_buffer* wayland_buffer;
 	void* data;
-	size_t size;
 };
 typedef struct uwac_buffer UwacBuffer;
 

@@ -26,6 +26,7 @@
 #cmakedefine HAVE_EXECINFO_H
 
 /* Features */
+#cmakedefine HAVE_ALIGNED_REQUIRED
 #cmakedefine SWRESAMPLE_FOUND
 #cmakedefine AVRESAMPLE_FOUND
 

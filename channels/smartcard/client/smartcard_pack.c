@@ -101,7 +101,7 @@ static BOOL smartcard_ndr_pointer_read_(wStream* s, UINT32* index, UINT32* ptr, 
 static LONG smartcard_ndr_read(wStream* s, BYTE** data, size_t min, size_t elementSize,
                                ndr_ptr_t type)
 {
-	size_t len, offset, len2;
+	UINT32 len, offset, len2;
 	void* r;
 	size_t required;
 
@@ -163,11 +163,9 @@ static LONG smartcard_ndr_read(wStream* s, BYTE** data, size_t min, size_t eleme
 		         min, len);
 		return STATUS_DATA_ERROR;
 	}
+	len *= elementSize;
 
-	if (len > SIZE_MAX / 2)
-		return STATUS_BUFFER_TOO_SMALL;
-
-	if (Stream_GetRemainingLength(s) / elementSize < len)
+	if (Stream_GetRemainingLength(s) < len)
 	{
 		WLog_ERR(TAG,
 		         "Short data while trying to read data from NDR pointer, expected %" PRIu32
@@ -175,7 +173,6 @@ static LONG smartcard_ndr_read(wStream* s, BYTE** data, size_t min, size_t eleme
 		         len, Stream_GetRemainingLength(s));
 		return STATUS_BUFFER_TOO_SMALL;
 	}
-	len *= elementSize;
 
 	r = calloc(len + 1, sizeof(CHAR));
 	if (!r)
@@ -715,10 +712,7 @@ static void smartcard_trace_read_cache_return(SMARTCARD_DEVICE* smartcard,
 
 	if (ret->ReturnCode == SCARD_S_SUCCESS)
 	{
-		char buffer[1024];
 		WLog_LVL(TAG, g_LogLevel, " cbDataLen=%" PRId32, ret->cbDataLen);
-		WLog_LVL(TAG, g_LogLevel, "  cbData: %s",
-		         smartcard_array_dump(ret->pbData, ret->cbDataLen, buffer, sizeof(buffer)));
 	}
 	WLog_LVL(TAG, g_LogLevel, "}");
 }

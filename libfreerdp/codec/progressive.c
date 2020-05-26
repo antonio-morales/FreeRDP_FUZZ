@@ -1183,7 +1183,7 @@ static INLINE int progressive_rfx_upgrade_block(RFX_PROGRESSIVE_UPGRADE_STATE* s
 			sign[index] = input;
 		}
 
-		buffer[index] += (INT16)((UINT32)input << shift);
+		buffer[index] += (input << shift);
 	}
 
 	return 1;
@@ -1920,9 +1920,8 @@ static INLINE INT32 progressive_wb_read_region_header(PROGRESSIVE_CONTEXT* progr
                                                       UINT16 blockType, UINT32 blockLen,
                                                       PROGRESSIVE_BLOCK_REGION* region)
 {
-	size_t len;
+	size_t offset, len;
 
-	memset(region, 0, sizeof(PROGRESSIVE_BLOCK_REGION));
 	if (Stream_GetRemainingLength(s) < 12)
 	{
 		WLog_Print(progressive->log, WLOG_ERROR,
@@ -1965,37 +1964,35 @@ static INLINE INT32 progressive_wb_read_region_header(PROGRESSIVE_CONTEXT* progr
 	}
 
 	len = Stream_GetRemainingLength(s);
-	if (len / 8 < region->numRects)
+	offset = (region->numRects * 8);
+	if (len < offset)
 	{
 		WLog_Print(progressive->log, WLOG_ERROR, "ProgressiveRegion data short for region->rects");
 		return -1015;
 	}
-	len -= region->numRects * 8ULL;
 
-	if (len / 5 < region->numQuant)
+	offset += (region->numQuant * 5);
+	if (len < offset)
 	{
 		WLog_Print(progressive->log, WLOG_ERROR, "ProgressiveRegion data short for region->cQuant");
 		return -1018;
 	}
-	len -= region->numQuant * 5ULL;
 
-	if (len / 16 < region->numProgQuant)
+	offset += (region->numProgQuant * 16);
+	if (len < offset)
 	{
 		WLog_Print(progressive->log, WLOG_ERROR,
 		           "ProgressiveRegion data short for region->cProgQuant");
 		return -1021;
 	}
-	len -= region->numProgQuant * 16ULL;
 
-	if (len < region->tileDataSize)
+	offset += region->tileDataSize;
+	if (len < offset)
 	{
 		WLog_Print(progressive->log, WLOG_ERROR, "ProgressiveRegion data short for region->tiles");
 		return -1024;
 	}
-	len -= region->tileDataSize;
-	if (len > 0)
-		WLog_Print(progressive->log, WLOG_DEBUG,
-		           "Unused bytes detected, %" PRIuz " bytes not processed", len);
+
 	return 0;
 }
 
@@ -2004,16 +2001,16 @@ static INLINE INT32 progressive_wb_skip_region(PROGRESSIVE_CONTEXT* progressive,
 {
 	INT32 rc;
 	size_t total;
-	PROGRESSIVE_BLOCK_REGION* region = &progressive->region;
+	PROGRESSIVE_BLOCK_REGION region = { 0 };
 
-	rc = progressive_wb_read_region_header(progressive, s, blockType, blockLen, region);
+	rc = progressive_wb_read_region_header(progressive, s, blockType, blockLen, &region);
 	if (rc < 0)
 		return rc;
 
-	total = (region->numRects * 8);
-	total += (region->numQuant * 5);
-	total += (region->numProgQuant * 16);
-	total += region->tileDataSize;
+	total = (region.numRects * 8);
+	total += (region.numQuant * 5);
+	total += (region.numProgQuant * 16);
+	total += region.tileDataSize;
 	if (!Stream_SafeSeek(s, total))
 		return -1111;
 
@@ -2146,7 +2143,7 @@ INT32 progressive_decompress(PROGRESSIVE_CONTEXT* progressive, const BYTE* pSrcD
 	wStream *s, ss;
 	size_t start, end;
 	REGION16 clippingRects, updateRegion;
-	PROGRESSIVE_BLOCK_REGION* region = &progressive->region;
+	PROGRESSIVE_BLOCK_REGION* region;
 	PROGRESSIVE_SURFACE_CONTEXT* surface = progressive_get_surface_data(progressive, surfaceId);
 	union {
 		const BYTE* cbp;
@@ -2161,6 +2158,10 @@ INT32 progressive_decompress(PROGRESSIVE_CONTEXT* progressive, const BYTE* pSrcD
 		           surfaceId);
 		return -1001;
 	}
+
+	region = calloc(1, sizeof(PROGRESSIVE_BLOCK_REGION));
+	if (!region)
+		return -1111;
 
 	Stream_StaticInit(&ss, sconv.bp, SrcSize);
 	s = &ss;
@@ -2305,6 +2306,7 @@ INT32 progressive_decompress(PROGRESSIVE_CONTEXT* progressive, const BYTE* pSrcD
 	region16_uninit(&clippingRects);
 
 fail:
+	free(region);
 	return rc;
 }
 

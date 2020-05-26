@@ -307,11 +307,7 @@ void xf_lock_x11_(xfContext* xfc, const char* fkt);
 void xf_unlock_x11_(xfContext* xfc, const char* fkt);
 
 BOOL xf_picture_transform_required(xfContext* xfc);
-
-#define xf_draw_screen(_xfc, _x, _y, _w, _h) \
-	xf_draw_screen_((_xfc), (_x), (_y), (_w), (_h), __FUNCTION__, __FILE__, __LINE__)
-void xf_draw_screen_(xfContext* xfc, int x, int y, int w, int h, const char* fkt, const char* file,
-                     int line);
+void xf_draw_screen(xfContext* xfc, int x, int y, int w, int h);
 
 FREERDP_API DWORD xf_exit_code_from_disconnect_reason(DWORD reason);
 

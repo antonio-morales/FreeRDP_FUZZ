@@ -248,14 +248,12 @@ static BOOL winpr_match_unix_timezone_identifier_with_list(const char* tzid, con
 {
 	char* p;
 	char* list_copy;
-	char* context = NULL;
-
 	list_copy = _strdup(list);
 
 	if (!list_copy)
 		return FALSE;
 
-	p = strtok_s(list_copy, " ", &context);
+	p = strtok(list_copy, " ");
 
 	while (p != NULL)
 	{
@@ -265,7 +263,7 @@ static BOOL winpr_match_unix_timezone_identifier_with_list(const char* tzid, con
 			return TRUE;
 		}
 
-		p = strtok_s(NULL, " ", &context);
+		p = strtok(NULL, " ");
 	}
 
 	free(list_copy);

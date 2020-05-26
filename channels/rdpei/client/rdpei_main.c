@@ -445,9 +445,6 @@ static UINT rdpei_recv_pdu(RDPEI_CHANNEL_CALLBACK* callback, wStream* s)
 	UINT16 eventId;
 	UINT32 pduLength;
 	UINT error;
-	if (Stream_GetRemainingLength(s) < 6)
-		return ERROR_INVALID_DATA;
-
 	Stream_Read_UINT16(s, eventId);   /* eventId (2 bytes) */
 	Stream_Read_UINT32(s, pduLength); /* pduLength (4 bytes) */
 #ifdef WITH_DEBUG_RDPEI
@@ -571,7 +568,8 @@ static UINT rdpei_plugin_initialize(IWTSPlugin* pPlugin, IWTSVirtualChannelManag
 	rdpei->listener_callback->channel_mgr = pChannelMgr;
 
 	if ((error = pChannelMgr->CreateListener(pChannelMgr, RDPEI_DVC_CHANNEL_NAME, 0,
-	                                         &rdpei->listener_callback->iface, &(rdpei->listener))))
+	                                         (IWTSListenerCallback*)rdpei->listener_callback,
+	                                         &(rdpei->listener))))
 	{
 		WLog_ERR(TAG, "ChannelMgr->CreateListener failed with error %" PRIu32 "!", error);
 		goto error_out;
@@ -597,14 +595,7 @@ static UINT rdpei_plugin_terminated(IWTSPlugin* pPlugin)
 	if (!pPlugin)
 		return ERROR_INVALID_PARAMETER;
 
-	if (rdpei && rdpei->listener_callback)
-	{
-		IWTSVirtualChannelManager* mgr = rdpei->listener_callback->channel_mgr;
-		if (mgr)
-			IFCALL(mgr->DestroyListener, mgr, rdpei->listener);
-	}
 	free(rdpei->listener_callback);
-	free(rdpei->contactPoints);
 	free(rdpei->context);
 	free(rdpei);
 	return CHANNEL_RC_OK;

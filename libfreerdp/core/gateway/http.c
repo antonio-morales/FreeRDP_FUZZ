@@ -814,7 +814,6 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 		size_t count = 0;
 		char* buffer = (char*)Stream_Buffer(response->data);
 		char* line = (char*)Stream_Buffer(response->data);
-		char* context = NULL;
 
 		while ((line = string_strnstr(line, "\r\n", payloadOffset - (line - buffer) - 2UL)))
 		{
@@ -835,12 +834,12 @@ HttpResponse* http_response_recv(rdpTls* tls, BOOL readContentLength)
 		buffer[payloadOffset - 1] = '\0';
 		buffer[payloadOffset - 2] = '\0';
 		count = 0;
-		line = strtok_s(buffer, "\r\n", &context);
+		line = strtok(buffer, "\r\n");
 
 		while (line && (response->count > count))
 		{
 			response->lines[count] = line;
-			line = strtok_s(NULL, "\r\n", &context);
+			line = strtok(NULL, "\r\n");
 			count++;
 		}
 

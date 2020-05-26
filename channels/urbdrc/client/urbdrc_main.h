@@ -84,7 +84,6 @@ struct _URBDRC_PLUGIN
 	char* subsystem;
 
 	wLog* log;
-	IWTSListener* listener;
 };
 
 typedef BOOL (*PREGISTERURBDRCSERVICE)(IWTSPlugin* plugin, IUDEVMAN* udevman);
@@ -217,19 +216,20 @@ struct _IUDEVMAN
 	void (*loading_lock)(IUDEVMAN* idevman);
 	void (*loading_unlock)(IUDEVMAN* idevman);
 	BOOL (*initialize)(IUDEVMAN* idevman, UINT32 channelId);
-	UINT (*listener_created_callback)(IUDEVMAN* idevman);
 
 	IWTSPlugin* plugin;
 	UINT32 controlChannelId;
 	UINT32 status;
 };
 
-#define DEVICE_ADD_FLAG_BUS 0x01
-#define DEVICE_ADD_FLAG_DEV 0x02
-#define DEVICE_ADD_FLAG_VENDOR 0x04
-#define DEVICE_ADD_FLAG_PRODUCT 0x08
-#define DEVICE_ADD_FLAG_REGISTER 0x10
-
+enum
+{
+	DEVICE_ADD_FLAG_BUS,
+	DEVICE_ADD_FLAG_DEV,
+	DEVICE_ADD_FLAG_VENDOR,
+	DEVICE_ADD_FLAG_PRODUCT,
+	DEVICE_ADD_FLAG_REGISTER
+} device_add_flag_t;
 #define DEVICE_ADD_FLAG_ALL                                               \
 	(DEVICE_ADD_FLAG_BUS | DEVICE_ADD_FLAG_DEV | DEVICE_ADD_FLAG_VENDOR | \
 	 DEVICE_ADD_FLAG_PRODUCT | DEVICE_ADD_FLAG_REGISTER)

@@ -51,10 +51,6 @@
 		const _type_* sptr = pSrc;                                                    \
 		_type_* dptr = pDst;                                                          \
 		size_t count;                                                                 \
-		if (val == 0)                                                                 \
-			return PRIMITIVES_SUCCESS;                                                \
-		if (val >= 16)                                                                \
-			return -1;                                                                \
 		if (len < 16) /* pointless if too small */                                    \
 		{                                                                             \
 			return _fallback_(pSrc, val, pDst, len);                                  \

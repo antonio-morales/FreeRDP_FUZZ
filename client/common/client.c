@@ -467,17 +467,14 @@ static DWORD client_cli_accept_certificate(rdpSettings* settings)
 		{
 			case 'y':
 			case 'Y':
-				fgetc(stdin);
 				return 1;
 
 			case 't':
 			case 'T':
-				fgetc(stdin);
 				return 2;
 
 			case 'n':
 			case 'N':
-				fgetc(stdin);
 				return 0;
 
 			default:
@@ -552,7 +549,6 @@ DWORD client_cli_verify_certificate_ex(freerdp* instance, const char* host, UINT
 	printf("\tSubject:     %s\n", subject);
 	printf("\tIssuer:      %s\n", issuer);
 	printf("\tThumbprint:  %s\n", fingerprint);
-
 	printf("The above X.509 certificate could not be verified, possibly because you do not have\n"
 	       "the CA certificate in your certificate store, or the certificate has expired.\n"
 	       "Please look at the OpenSSL documentation on how to add a private CA to the store.\n");
@@ -648,14 +644,6 @@ DWORD client_cli_verify_changed_certificate_ex(freerdp* instance, const char* ho
 	printf("\tIssuer:      %s\n", old_issuer);
 	printf("\tThumbprint:  %s\n", old_fingerprint);
 	printf("\n");
-	if (flags & VERIFY_CERT_FLAG_MATCH_LEGACY_SHA1)
-	{
-		printf("\tA matching entry with legacy SHA1 was found in local known_hosts2 store.\n");
-		printf("\tIf you just upgraded from a FreeRDP version before 2.0 this is expected.\n");
-		printf("\tThe hashing algorithm has been upgraded from SHA1 to SHA256.\n");
-		printf("\tAll manually accepted certificates must be reconfirmed!\n");
-		printf("\n");
-	}
 	printf("The above X.509 certificate does not match the certificate used for previous "
 	       "connections.\n"
 	       "This may indicate that the certificate has been tampered with.\n"

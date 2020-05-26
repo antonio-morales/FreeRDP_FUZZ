@@ -886,7 +886,7 @@ BOOL tls_accept(rdpTls* tls, BIO* underlying, rdpSettings* settings)
 {
 	long options = 0;
 	BIO* bio;
-	EVP_PKEY* privkey;
+	RSA* rsa;
 	X509* x509;
 	/**
 	 * SSL_OP_NO_SSLv2:
@@ -951,19 +951,19 @@ BOOL tls_accept(rdpTls* tls, BIO* underlying, rdpSettings* settings)
 		return FALSE;
 	}
 
-	privkey = PEM_read_bio_PrivateKey(bio, NULL, NULL, NULL);
+	rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
 	BIO_free_all(bio);
 
-	if (!privkey)
+	if (!rsa)
 	{
 		WLog_ERR(TAG, "invalid private key");
 		return FALSE;
 	}
 
-	if (SSL_use_PrivateKey(tls->ssl, privkey) <= 0)
+	if (SSL_use_RSAPrivateKey(tls->ssl, rsa) <= 0)
 	{
-		WLog_ERR(TAG, "SSL_CTX_use_PrivateKey_file failed");
-		EVP_PKEY_free(privkey);
+		WLog_ERR(TAG, "SSL_CTX_use_RSAPrivateKey_file failed");
+		RSA_free(rsa);
 		return FALSE;
 	}
 
@@ -1198,10 +1198,9 @@ static BOOL is_accepted_fingerprint(CryptoCert cert, const char* CertificateAcce
 		char* cur = strtok_s(copy, ",", &context);
 		while (cur)
 		{
-			char* subcontext = NULL;
 			BOOL equal;
 			char* strhash;
-			const char* h = strtok_s(cur, ":", &subcontext);
+			const char* h = strtok(cur, ":");
 			const char* fp;
 
 			if (!h)
@@ -1493,22 +1492,6 @@ int tls_verify_certificate(rdpTls* tls, CryptoCert cert, const char* hostname, U
 			fingerprint = crypto_cert_fingerprint(cert->px509);
 			/* search for matching entry in known_hosts file */
 			match = certificate_data_match(tls->certificate_store, certificate_data);
-			{
-				int match_old = -1;
-				char* sha1 = crypto_cert_fingerprint_by_hash(cert->px509, "sha1");
-				rdpCertificateData* certificate_data_sha1 =
-				    certificate_data_new(hostname, port, subject, issuer, sha1);
-
-				if (sha1 && certificate_data_sha1)
-					match_old =
-					    certificate_data_match(tls->certificate_store, certificate_data_sha1);
-
-				if (match_old == 0)
-					flags |= VERIFY_CERT_FLAG_MATCH_LEGACY_SHA1;
-
-				certificate_data_free(certificate_data_sha1);
-				free(sha1);
-			}
 
 			if (match == 1)
 			{

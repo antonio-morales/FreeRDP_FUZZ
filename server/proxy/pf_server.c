@@ -60,8 +60,11 @@ static BOOL pf_server_parse_target_from_routing_token(rdpContext* context, char*
 	const char* routing_token = freerdp_nego_get_routing_token(context, &routing_token_length);
 	pServerContext* ps = (pServerContext*)context;
 
-	if (!routing_token)
+	if (routing_token == NULL)
+	{
+		/* no routing token */
 		return FALSE;
+	}
 
 	if ((routing_token_length <= prefix_len) || (routing_token_length >= TARGET_MAX))
 	{
@@ -146,7 +149,7 @@ static BOOL pf_server_post_connect(freerdp_peer* peer)
 	pc = pf_context_create_client_context(peer->settings);
 	if (pc == NULL)
 	{
-		LOG_ERR(TAG, ps, "failed to create client context!");
+		LOG_ERR(TAG, ps, "[%s]: pf_context_create_client_context failed!");
 		return FALSE;
 	}
 
@@ -157,6 +160,7 @@ static BOOL pf_server_post_connect(freerdp_peer* peer)
 
 	if (!pf_server_get_target_info(peer->context, client_settings, pdata->config))
 	{
+
 		LOG_INFO(TAG, ps, "pf_server_get_target_info failed!");
 		return FALSE;
 	}
@@ -200,18 +204,10 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 {
 	pServerContext* ps = (pServerContext*)peer->context;
 	pClientContext* pc = ps->pdata->pc;
-	proxyData* pdata = ps->pdata;
+	proxyData* pdata = pc->pdata;
 	proxyConfig* config = pdata->config;
 	size_t i;
 	const char* channel_name = WTSChannelGetName(peer, channelId);
-
-	/*
-	 * client side is not initialized yet, call original callback.
-	 * this is probably a drdynvc message between peer and proxy server,
-	 * which doesn't need to be proxied.
-	 */
-	if (!pc)
-		goto original_cb;
 
 	for (i = 0; i < config->PassthroughCount; i++)
 	{
@@ -235,7 +231,6 @@ static BOOL pf_server_receive_channel_data_hook(freerdp_peer* peer, UINT16 chann
 		}
 	}
 
-original_cb:
 	return server_receive_channel_data_original(peer, channelId, data, size, flags, totalSize);
 }
 
@@ -339,8 +334,7 @@ static DWORD WINAPI pf_server_handle_peer(LPVOID arg)
 	pdata = ps->pdata;
 
 	client->Initialize(client);
-	LOG_INFO(TAG, ps, "new connection: proxy address: %s, client address: %s", pdata->config->Host,
-	         client->hostname);
+	LOG_INFO(TAG, ps, "peer connected: %s", client->hostname);
 	/* Main client event handling loop */
 	ChannelEvent = WTSVirtualChannelManagerGetEventHandle(ps->vcm);
 
@@ -421,7 +415,6 @@ fail:
 	LOG_INFO(TAG, ps, "starting shutdown of connection");
 	LOG_INFO(TAG, ps, "stopping proxy's client");
 	freerdp_client_stop(pc);
-	pf_modules_run_hook(HOOK_TYPE_SERVER_SESSION_END, pdata);
 	LOG_INFO(TAG, ps, "freeing server's channels");
 	pf_server_channels_free(ps);
 	LOG_INFO(TAG, ps, "freeing proxy data");

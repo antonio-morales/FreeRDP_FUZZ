@@ -59,7 +59,6 @@ struct _ECHO_PLUGIN
 	IWTSPlugin iface;
 
 	ECHO_LISTENER_CALLBACK* listener_callback;
-	IWTSListener* listener;
 };
 
 /**
@@ -143,8 +142,8 @@ static UINT echo_plugin_initialize(IWTSPlugin* pPlugin, IWTSVirtualChannelManage
 	echo->listener_callback->plugin = pPlugin;
 	echo->listener_callback->channel_mgr = pChannelMgr;
 
-	return pChannelMgr->CreateListener(pChannelMgr, "ECHO", 0, &echo->listener_callback->iface,
-	                                   &echo->listener);
+	return pChannelMgr->CreateListener(pChannelMgr, "ECHO", 0,
+	                                   (IWTSListenerCallback*)echo->listener_callback, NULL);
 }
 
 /**
@@ -155,12 +154,7 @@ static UINT echo_plugin_initialize(IWTSPlugin* pPlugin, IWTSVirtualChannelManage
 static UINT echo_plugin_terminated(IWTSPlugin* pPlugin)
 {
 	ECHO_PLUGIN* echo = (ECHO_PLUGIN*)pPlugin;
-	if (echo && echo->listener_callback)
-	{
-		IWTSVirtualChannelManager* mgr = echo->listener_callback->channel_mgr;
-		if (mgr)
-			IFCALL(mgr->DestroyListener, mgr, echo->listener);
-	}
+
 	free(echo);
 
 	return CHANNEL_RC_OK;

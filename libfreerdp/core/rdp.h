@@ -179,13 +179,13 @@ struct rdp_rdp
 	UINT64 inPackets;
 	UINT64 outBytes;
 	UINT64 outPackets;
-	CRITICAL_SECTION critical;
 };
 
 FREERDP_LOCAL BOOL rdp_read_security_header(wStream* s, UINT16* flags, UINT16* length);
 FREERDP_LOCAL void rdp_write_security_header(wStream* s, UINT16 flags);
 
-FREERDP_LOCAL BOOL rdp_read_share_control_header(wStream* s, UINT16* length, UINT16* type,
+FREERDP_LOCAL BOOL rdp_read_share_control_header(wStream* s, UINT16* tpktLength,
+                                                 UINT16* remainingLength, UINT16* type,
                                                  UINT16* channel_id);
 
 FREERDP_LOCAL BOOL rdp_read_share_data_header(wStream* s, UINT16* length, BYTE* type,

@@ -261,7 +261,6 @@ struct _NTLM_CONTEXT
 	SecBuffer NtChallengeResponse;
 	SecBuffer LmChallengeResponse;
 	NTLMv2_RESPONSE NTLMv2Response;
-	BYTE NtProofString[16];
 	BYTE Timestamp[8];
 	BYTE ChallengeTimestamp[8];
 	BYTE ServerChallenge[8];
