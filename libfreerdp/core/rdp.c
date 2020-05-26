@@ -143,8 +143,7 @@ void rdp_write_security_header(wStream* s, UINT16 flags)
 	Stream_Write_UINT16(s, 0);     /* flagsHi (unused) */
 }
 
-BOOL rdp_read_share_control_header(wStream* s, UINT16* tpktLength, UINT16* remainingLength,
-                                   UINT16* type, UINT16* channel_id)
+BOOL rdp_read_share_control_header(wStream* s, UINT16* length, UINT16* type, UINT16* channel_id)
 {
 	UINT16 len;
 	if (Stream_GetRemainingLength(s) < 2)
@@ -153,6 +152,8 @@ BOOL rdp_read_share_control_header(wStream* s, UINT16* tpktLength, UINT16* remai
 	/* Share Control Header */
 	Stream_Read_UINT16(s, len); /* totalLength */
 
+	*length = len;
+
 	/* If length is 0x8000 then we actually got a flow control PDU that we should ignore
 	 http://msdn.microsoft.com/en-us/library/cc240576.aspx */
 	if (len == 0x8000)
@@ -160,34 +161,20 @@ BOOL rdp_read_share_control_header(wStream* s, UINT16* tpktLength, UINT16* remai
 		if (!rdp_read_flow_control_pdu(s, type, channel_id))
 			return FALSE;
 		*channel_id = 0;
-		if (tpktLength)
-			*tpktLength = 8; /* Flow control PDU is 8 bytes */
-		if (remainingLength)
-			*remainingLength = 0;
+		*length = 8; /* Flow control PDU is 8 bytes */
 		return TRUE;
 	}
 
 	if ((len < 4) || ((len - 2) > Stream_GetRemainingLength(s)))
 		return FALSE;
 
-	if (tpktLength)
-		*tpktLength = len;
-
 	Stream_Read_UINT16(s, *type); /* pduType */
 	*type &= 0x0F;                /* type is in the 4 least significant bits */
 
-	if (len > 5)
-	{
+	if (len > 4)
 		Stream_Read_UINT16(s, *channel_id); /* pduSource */
-		if (remainingLength)
-			*remainingLength = len - 6;
-	}
 	else
-	{
 		*channel_id = 0; /* Windows XP can send such short DEACTIVATE_ALL PDUs. */
-		if (remainingLength)
-			*remainingLength = len - 4;
-	}
 
 	return TRUE;
 }
@@ -1112,7 +1099,7 @@ int rdp_recv_out_of_sequence_pdu(rdpRdp* rdp, wStream* s)
 	UINT16 length;
 	UINT16 channelId;
 
-	if (!rdp_read_share_control_header(s, &length, NULL, &type, &channelId))
+	if (!rdp_read_share_control_header(s, &length, &type, &channelId))
 		return -1;
 
 	if (type == PDU_TYPE_DATA)
@@ -1288,6 +1275,7 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 	int rc = 0;
 	UINT16 length;
 	UINT16 pduType;
+	UINT16 pduLength;
 	UINT16 pduSource;
 	UINT16 channelId = 0;
 	UINT16 securityFlags = 0;
@@ -1343,16 +1331,20 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 		{
 			wStream sub;
 			size_t diff;
-			UINT16 remain;
 
-			if (!rdp_read_share_control_header(s, NULL, &remain, &pduType, &pduSource))
+			if (!rdp_read_share_control_header(s, &pduLength, &pduType, &pduSource))
 			{
 				WLog_ERR(TAG, "rdp_recv_tpkt_pdu: rdp_read_share_control_header() fail");
 				return -1;
 			}
 
-			Stream_StaticInit(&sub, Stream_Pointer(s), remain);
-			if (!Stream_SafeSeek(s, remain))
+			/* Remove header data. */
+			if (pduLength > 5)
+				pduLength -= 6;
+			else
+				pduLength -= 4;
+			Stream_StaticInit(&sub, Stream_Pointer(s), pduLength);
+			if (!Stream_SafeSeek(s, pduLength))
 				return -1;
 
 			rdp->settings->PduSource = pduSource;
@@ -1383,7 +1375,7 @@ static int rdp_recv_tpkt_pdu(rdpRdp* rdp, wStream* s)
 				case PDU_TYPE_FLOW_TEST:
 					WLog_DBG(TAG, "flow message 0x%04" PRIX16 "", pduType);
 					/* http://msdn.microsoft.com/en-us/library/cc240576.aspx */
-					if (!Stream_SafeSeek(&sub, remain))
+					if (!Stream_SafeSeek(&sub, pduLength))
 						return -1;
 					break;
 
